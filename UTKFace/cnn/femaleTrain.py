@@ -1,6 +1,7 @@
 # Instantiate convolutional base
 from keras_vggface.vggface import VGGFace
 import os
+from tqdm import tqdm
 import shutil
 from keras.preprocessing.image import ImageDataGenerator
 import numpy as np
@@ -13,7 +14,7 @@ validation_dir = os.path.join(base_dir, 'femaleValidation')
 test_dir = os.path.join(base_dir, 'femaleTest')
 
 # manually defined, number of samples we have for each category
-train_size, validation_size, test_size = 7064, 2350, 2371
+train_size, validation_size, test_size = 6410, 2312, 2152
 
 img_width, img_height = 224, 224  # Default input size for VGG16
 
@@ -33,7 +34,7 @@ def extract_features(directory, sample_count):
                                             class_mode='sparse')
     # Pass data through convolutional base
     i = 0
-    for inputs_batch, labels_batch in generator:
+    for inputs_batch, labels_batch in tqdm(generator):
         features_batch = conv_base.predict(inputs_batch)
         features[i * batch_size: (i + 1) * batch_size] = features_batch
         labels[i * batch_size: (i + 1) * batch_size] = labels_batch
@@ -43,6 +44,7 @@ def extract_features(directory, sample_count):
     return features, labels
 
 train_features, train_labels = extract_features(train_dir, train_size)
+
 validation_features, validation_labels = extract_features(validation_dir, validation_size)
 
 print(train_features)
