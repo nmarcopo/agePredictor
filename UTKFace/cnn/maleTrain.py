@@ -5,6 +5,7 @@ import shutil
 from keras.preprocessing.image import ImageDataGenerator
 import numpy as np
 import pickle
+from tqdm import tqdm
 
 # Base variables
 base_dir = '../'
@@ -31,9 +32,10 @@ def extract_features(directory, sample_count):
                                             target_size=(img_width,img_height),
                                             batch_size = batch_size,
                                             class_mode='sparse')
+    print(generator.class_indices)
     # Pass data through convolutional base
     i = 0
-    for inputs_batch, labels_batch in generator:
+    for inputs_batch, labels_batch in tqdm(generator):
         features_batch = conv_base.predict(inputs_batch)
         features[i * batch_size: (i + 1) * batch_size] = features_batch
         labels[i * batch_size: (i + 1) * batch_size] = labels_batch
