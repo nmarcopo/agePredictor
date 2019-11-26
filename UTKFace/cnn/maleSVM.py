@@ -16,7 +16,7 @@ def visualize_predictions(classifier):
 
     # Get picture
     base_dir = '../'
-    img_path = path.join(base_dir, 'maleValidation/15-17', '17_0_4_20170103212532692.jpg.chip.jpg')
+    img_path = path.join(base_dir, 'maleTest/26-30', '28_0_3_20170105175516710.jpg.chip.jpg')
     img = image.load_img(img_path, target_size=(img_width, img_height))
     img_tensor = image.img_to_array(img)  # Image data encoded as integers in the 0–255 range
     img_tensor /= 255.  # Normalize to [0,1] for plt.imshow application
