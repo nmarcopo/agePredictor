@@ -103,7 +103,7 @@ def paralell_predictions(path):
 totalTested = 0
 totalCorrect = 0
 pool = Pool(processes=7)
-for root, dirs, files in list(walk("../maleTrain/"))[7:]:
+for root, dirs, files in list(walk("../maleTrain/"))[9:]:
     print(root)
     root = [root for _ in range(len(list(files)))]
     print("there are", len(root), "files to go through.")
@@ -113,7 +113,7 @@ for root, dirs, files in list(walk("../maleTrain/"))[7:]:
     for response in tqdm(pool.imap_unordered(paralell_predictions, zip(root, files))):
         currTested += 1
         currCorrect += response
-        print("current progress for", root[0],":", currTested, "tested,", currCorrect, "correct,", float(currCorrect/currTested))
+        print("current progress for", root[0],":", currTested, "/", len(root),"tested,", currCorrect, "correct,", float(currCorrect/currTested))
     print("final progress for", root[0],":", currTested, "tested,", currCorrect, "correct,", float(currCorrect/currTested))
     #print("accuracy for", root, "is", float(sum(prediction_results) / len(prediction_results)))
     #print("there are", len(prediction_results), "files, and", sum(prediction_results), "were correct.")
