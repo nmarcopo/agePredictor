@@ -8,15 +8,25 @@ from keras_vggface.vggface import VGGFace
 from keras.preprocessing import image
 import numpy as np
 from os import path
+from os import walk
+from tqdm import tqdm
 
 # Define function to visualize predictions
-def visualize_predictions(classifier):
+def get_prediction(classifier, img_path, debug=False):
     img_width, img_height = 224, 224  # Default input size for VGG16
     conv_base = VGGFace(include_top=False, input_shape=(img_width, img_height, 3))
 
     # Get picture
-    base_dir = '../'
-    img_path = path.join(base_dir, 'maleTest/26-30', '28_0_3_20170105175516710.jpg.chip.jpg')
+    if not img_path:
+        print("no image passed in, using default image from 26-30")
+        truth = '26-30'
+        base_dir = '../'
+        img_path = path.join(base_dir, 'maleTest/26-30', '28_0_3_20170105175516710.jpg.chip.jpg')
+    else:
+        truth = img_path.split('/')[-2]
+    if debug:
+        print("image is:", img_path)
+        print("truth for this image is:", truth)
     img = image.load_img(img_path, target_size=(img_width, img_height))
     img_tensor = image.img_to_array(img)  # Image data encoded as integers in the 0–255 range
     img_tensor /= 255.  # Normalize to [0,1] for plt.imshow application
@@ -37,29 +47,36 @@ def visualize_predictions(classifier):
     # Write prediction
     [prediction] = prediction
     labels = ['1-2', '10-14', '15-17', '18-21', '22-25', '26-30', '3-5', '31-35', '36-40', '41-45', '46-50', '51-55', '56-60', '6-9', '61-65', '66-70']
-    print(labels[int(prediction)])
-    """
-    if prediction < 0.5:
-        print('Cat')
-    else:
-        print('Dog')
-    """
+    predictionText = labels[int(prediction)]
+    if debug:
+        print("prediction for image is:", predictionText)
+    if predictionText != truth:
+        if debug:
+            print("PREDICTION WAS WRONG!!!!")
+        return 0
+    return 1
 
+print("Loading training features")
 with open('male_train_features.obj', 'rb') as f:
     train_features = pickle.load(f)
+print("Loading training labels")
 with open('male_train_labels.obj', 'rb') as f:
     train_labels = pickle.load(f)
 
+print("Loading validation features")
 with open('male_validation_features.obj', 'rb') as f:
     validation_features = pickle.load(f)
+print("Loading validation labels")
 with open('male_validation_labels.obj', 'rb') as f:
     validation_labels = pickle.load(f)
 
 # Concatenate training and validation sets
+print("creating training features and labels matricies")
 svm_features = np.concatenate((train_features, validation_features))
 svm_labels = np.concatenate((train_labels, validation_labels))
 
-X_train, y_train = svm_features.reshape(9414,7*7*512), svm_labels
+num_images_in_set = 9414
+X_train, y_train = svm_features.reshape(num_images_in_set,7*7*512), svm_labels
 
 if not path.exists('maleClf.obj'):
     print('clf does not exist yet. Computing...')
@@ -78,22 +95,24 @@ else:
     print('clf exists. Loading...')
     with open('maleClf.obj', 'rb') as f:
         clf = pickle.load(f)
-# Save model
-#model.save('ages_svm.h5')
 
-#clf = svm.SVC(kernel='linear').fit(male_features, male_labels)
+totalTested = 0
+totalCorrect = 0
+for root, dirs, files in list(walk("../maleTrain/"))[5:]:
+    print(root)
+    dirTested = 0
+    dirCorrect = 0
+    for f in tqdm(files):
+        predicted = get_prediction(clf, root + '/' + f, False)
+        totalCorrect += predicted
+        totalTested += 1
 
-# prepare the image for VGG
-"""
-imgLocation = '../maleValidation/31-35/35_0_0_20170117122020502.jpg.chip.jpg'
-img = cv2.imread(imgLocation, cv2.IMREAD_COLOR)
-img = cv2.resize(img, (224, 224), interpolation=cv2.INTER_LINEAR)
-img = img[np.newaxis, :, :, :]
-# call feature extraction
-clf.predict(img)
-"""
-
-visualize_predictions(clf)
+        dirCorrect += predicted
+        dirTested += 1
+    if dirTested:
+        print("accuracy for", root, "is", float(dirCorrect / dirTested))
+print("accuracy for all folders is", float(totalCorrect / totalTested))
+get_prediction(clf, None)
 
 # Evaluate model
 """
