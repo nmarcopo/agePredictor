@@ -103,9 +103,11 @@ def paralell_predictions(path):
 totalTested = 0
 totalCorrect = 0
 pool = Pool(processes=7)
-for root, dirs, files in list(walk("../maleTrain/"))[9:]:
+for root, dirs, files in list(walk("../maleTest/"))[10:]:
     print(root)
     root = [root for _ in range(len(list(files)))]
+    if len(root) == 0:
+        continue
     print("there are", len(root), "files to go through.")
     #prediction_results = list(tqdm(pool.imap_unordered(paralell_predictions, zip(root, files))))
     currTested = 0
