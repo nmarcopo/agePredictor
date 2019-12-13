@@ -34,7 +34,7 @@ def get_prediction(classifier, img_path, debug=False):
 
     # Extract features
     features = conv_base.predict(img_tensor.reshape(1,img_width, img_height, 3))
-
+    print(features.shape)
     # Make prediction
     try:
         prediction = classifier.predict(features)
@@ -48,14 +48,43 @@ def get_prediction(classifier, img_path, debug=False):
     # Write prediction
     [prediction] = prediction
     labels = ['1-2', '10-14', '15-17', '18-21', '22-25', '26-30', '3-5', '31-35', '36-40', '41-45', '46-50', '51-55', '56-60', '6-9', '61-65', '66-70']
+    oneOff = {
+            '1-2': ['1-2', '3-5'],
+            '3-5': ['1-2', '3-5', '6-9'],
+            '6-9': ['3-5', '6-9', '10-14'],
+            '10-14': ['6-9', '10-14', '15-17'],
+            '15-17': ['10-14', '15-17', '18-21'],
+            '18-21': ['15-17', '18-21', '22-25'],
+            '22-25': ['18-21', '22-25', '26-30'],
+            '26-30': ['22-25', '26-30', '31-35'],
+            '31-35': ['26-30', '31-35', '36-40'],
+            '36-40': ['31-35', '36-40', '41-45'],
+            '41-45': ['36-40', '41-45', '46-50'],
+            '46-50': ['41-45', '46-50', '51-55'],
+            '51-55': ['46-50', '51-55', '56-60'],
+            '56-60': ['51-55', '56-60', '61-65'],
+            '61-65': ['56-60', '61-65', '66-70'],
+            '66-70': ['61-65', '66-70'],
+            }
     predictionText = labels[int(prediction)]
-    if debug:
-        print("prediction for image is:", predictionText)
+    #if debug:
+    print("image:", img_path)
+    print("prediction for image is:", predictionText)
+
+    predictionList = []
     if predictionText != truth:
         if debug:
             print("PREDICTION WAS WRONG!!!!")
-        return 0
-    return 1
+        predictionList.append(0)
+    else:
+        predictionList.append(1)
+
+    if predictionText in oneOff[truth]:
+        predictionList.append(1)
+    else:
+        predictionList.append(0)
+
+    return predictionList
 
 print("Loading training features")
 with open('male_train_features.obj', 'rb') as f:
@@ -112,11 +141,13 @@ for root, dirs, files in list(walk("../maleTest/"))[10:]:
     #prediction_results = list(tqdm(pool.imap_unordered(paralell_predictions, zip(root, files))))
     currTested = 0
     currCorrect = 0
-    for response in tqdm(pool.imap_unordered(paralell_predictions, zip(root, files))):
+    oneOffCorrect = 0
+    for response, oneOff in tqdm(pool.imap_unordered(paralell_predictions, zip(root, files))):
         currTested += 1
         currCorrect += response
-        print("current progress for", root[0],":", currTested, "/", len(root),"tested,", currCorrect, "correct,", float(currCorrect/currTested))
-    print("final progress for", root[0],":", currTested, "tested,", currCorrect, "correct,", float(currCorrect/currTested))
+        oneOffCorrect += oneOff
+        print("current progress for", root[0],":", currTested, "/", len(root),"tested,", currCorrect, "correct,", float(currCorrect/currTested), "oneOff:", oneOffCorrect, float(oneOffCorrect / currTested))
+    print("final progress for", root[0],":", currTested, "tested,", currCorrect, "correct,", float(currCorrect/currTested), "oneOff:", oneOffCorrect, float(oneOffCorrect / currTested))
     #print("accuracy for", root, "is", float(sum(prediction_results) / len(prediction_results)))
     #print("there are", len(prediction_results), "files, and", sum(prediction_results), "were correct.")
     """
@@ -132,8 +163,8 @@ for root, dirs, files in list(walk("../maleTest/"))[10:]:
     if dirTested:
         print("accuracy for", root, "is", float(dirCorrect / dirTested))
     """
-print("accuracy for all folders is", float(totalCorrect / totalTested))
-get_prediction(clf, None)
+#print("accuracy for all folders is", float(totalCorrect / totalTested))
+#get_prediction(clf, None)
 
 # Evaluate model
 """
